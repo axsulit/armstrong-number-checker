@@ -5,24 +5,65 @@
 section .text
 global main
 main:
-    ; Get input from user.
+    PRINT_STRING "Input Number: "
+    GET_UDEC 8, rax
+    mov rdi, rax; 
     
-    ; Check if the input is a valid integer and positive.
+    ; TODO: Check if the input is a valid integer
         ; call error func
         
-    ; Calculate the number of digits in the input number.
+    cmp rax, 0             ; Check if the input is positive
+    jl error               ; Show error message and prompt to restart.
+    mov rcx, 0             ; Initialize counter for count_digits.
+    jmp count_digits       ; Calculate the number of digits in the input number.
+ 
+error:
+    PRINT_STRING "Error: negative number input"
+    NEWLINE
+    jmp repeat
     
-    ; Loop through each digit of the number.
+repeat:
+    GET_CHAR AL           ; remove newline character
+    PRINT_STRING "Do you want to continue (Y/N)? "
+    GET_CHAR AL           ; Get the character input from the user
+    cmp AL, 'Y'
+    GET_CHAR AL           ; remove newline character
+    je main               ; If 'Y', jump back to main to get a new input
+    cmp AL, 'N'
+    je exit               ; If 'N', end the program
+    jmp repeat            ; If neither 'Y' nor 'N', loop back to repeat
+
+count_digits: 
+    cmp rax, 0            ; Check if the number is zero
+    je exit               ; If zero, jump to the end of the counting
+    inc rcx               ; Increment digit count
+    mov rdx, 0            ; Clear upper 32 bits of the dividend
+    mov rbx, 10           ; Divisor
+    div rbx               ; Divide rdx:rax by rbx; quotient in rax, remainder in rdx
+    jmp count_digits      ; Repeat the loop
+
+process_digit:
+    ; write your code here
+    
+    ; TODO: Loop through each digit of the number.
         ; calculate its nth power, 
         ; add it to the total sum;
-
-    ; Compare the total sum to the input number to determine if it's an Armstrong number;
+        
+result:
+    ; TODO: Compare the total sum to the input number to determine if it's an Armstrong number;
     
-    ; display result
     
-    ; prompt to start again
+    ; TODO: display results
+    PRINT_STRING "m-th power of each digits: "
+    NEWLINE
+    PRINT_STRING "Sum of the m-th power digits: "
+    NEWLINE
+    PRINT_STRING "Armstrong Number: "
+    NEWLINE
     
-    xor rax, rax
+    jmp exit
+    
+exit:
+    PRINT_HEX 8, rcx
+    xor rax, rax         ; Exit the program
     ret
-    
-; error function - show error message
