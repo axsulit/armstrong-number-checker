@@ -5,7 +5,6 @@
 section .data
 input dq 0
 input_rem dq 0xA
-input_rem_2 dq 0xA
 repeat_flag db 0xA
 digit_count dq 0
 sum dq 0
@@ -20,7 +19,7 @@ main:
     PRINT_STRING "Input Number: "       
     GET_UDEC 8, [input]    
     GET_CHAR [input_rem]
-    ; Check if input has non-inteer value
+    ; Check if input has non-integer value
     cmp qword [input_rem], 0xA          
     jne clear_string
     ; Check if input < 0
@@ -69,13 +68,15 @@ reset:
 repeat:
     ; Get user input
     PRINT_STRING "Do you want to continue (Y/N)? "
-    GET_CHAR [repeat_flag]       
-    GET_STRING [input_rem], 8 
-    PRINT_STRING [repeat_flag]
-    PRINT_STRING [input_rem]
+    GET_CHAR [repeat_flag]   
     ; Check if valid input
+    cmp byte [repeat_flag], 0xA 
+    je error_string    
+    GET_CHAR [input_rem]
+    ; Check if there are extra characters
     cmp qword [input_rem], 0xA
-    jne error_string
+    jne clear_string
+    NEWLINE
     ; loop if user inputs Y
     cmp byte [repeat_flag], 'Y'
     je main   
@@ -83,7 +84,7 @@ repeat:
     cmp byte [repeat_flag], 'N'
     je exit       
     ; show error msg
-    jmp error_string            
+    jmp error_string                 
     
 count_digits: 
     ; Check if input is already zero
@@ -147,18 +148,18 @@ power_of_n:
     
 display_power:
     ; display power
-    PRINT_DEC 8, R10
-    PRINT_STRING ', '
+    PRINT_UDEC 8, r10
     ; update sum
     ADD [sum], r10
     ; check if power of all digits done
     cmp rdi, 0
     jz check_armstrong
+    PRINT_STRING ', '
     ; update registers and variables
     mov r8, rcx 
     dec qword [digit_count]
     mov r9, [digit_count]
-    
+    ; loop back to initialize divisor
     jmp init_divisor
     
 check_armstrong:
@@ -187,5 +188,8 @@ not_armstrong:
     
 exit:
     ; exit program
+    PRINT_STRING "Press Enter to exit..."
+    GET_CHAR ax
+    cmp ax, 0xA
     xor rax, rax
     ret
