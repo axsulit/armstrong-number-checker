@@ -120,7 +120,8 @@ divisor:
     je first_digit
     dec r9
     ; multiply divisor by 10
-    imul rax, 10 
+    mov rdx, 10
+    mul rdx 
     ; move divisor in rbx
     mov rbx, rax 
     jmp divisor ; start divisor again
@@ -133,7 +134,9 @@ first_digit:
     ; update remaining number
     mov rdi, rdx 
     ;computer nth power of digit
-    mov r10, 1 ; contain nth power
+    mov r11, rax
+    mov r10, 1 
+    mov rax, r10 ; contain nth power
     jmp power_of_n
     
 power_of_n:
@@ -142,14 +145,14 @@ power_of_n:
     je display_power
     dec r8
     ; multiply current power by current digit
-    imul r10, rax
+    mul r11
     jmp power_of_n ; loop
     
 display_power:
     ; display power
-    PRINT_UDEC 8, r10
+    PRINT_UDEC 8, rax
     ; update sum
-    ADD [sum], r10
+    ADD [sum], rax
     ; check if power of all digits done
     cmp rdi, 0
     jz check_armstrong
