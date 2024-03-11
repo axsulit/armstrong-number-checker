@@ -2,39 +2,69 @@
 ; Torio, Ysobella S17
 
 %include "io64.inc"
+section .data
+input dq 0
+input_rem dq 0xA
 section .text
 global main
+
 main:
-    mov rbp, rsp; for correct debugging
-    PRINT_STRING "Input Number: "
-    GET_UDEC 8, rax
-    mov rdi, rax; 
-    mov r11, 0 ; total
-        
-    cmp rax, 0             ; Check if the input is positive
-    jl error               ; Show error message and prompt to restart.
-    mov rcx, 0             ; Initialize counter for count_digits.
-    jmp count_digits       ; Calculate the number of digits in the input number.
- 
-error:
-    PRINT_STRING "Error: negative number input"
+    ; for correct debugging
+    mov rbp, rsp                    
+    
+    ; Get user input
+    PRINT_STRING "Input Number: "   
+    GET_UDEC 8, [input]    
+    GET_STRING [input_rem], 8
+      
+    ; If value is not '\n', the input is not a valid integer
+    cmp qword [input_rem], 0xA
+    jne error_string
+    
+    ; If value is negative, the input is not a positive integer
+    cmp qword [input], 0                      
+    jl error_int                        
+    
+    ; Initialize needed registers
+    mov rax, [input]
+    mov rdi, rax                     
+    mov r11, 0    
+    mov rcx, 0              
+    
+    ; Start        
+    jmp count_digits                
+
+error_string:
+    PRINT_STRING "Error: Invalid input"
+    call reset_vars
     NEWLINE
     jmp repeat
     
+error_int:
+    PRINT_STRING "Error: negative number input"
+    call reset_vars
+    NEWLINE
+    jmp repeat
+    
+reset_vars:
+    mov qword [input], 0
+    mov qword [input_rem], 0xA
+    ret
+    
 count_digits: 
-    cmp rax, 0            ; Check if the number is zero
-    je innit_div          ; If zero, jump to the end of the counting
-    inc rcx               ; Increment digit count
-    mov rdx, 0            ; Clear upper 32 bits of the dividend
-    mov rbx, 10           ; Divisor
-    div rbx               ; Divide rdx:rax by rbx; quotient in rax, remainder in rdx
+    cmp rax, 0                      ; Check if the number is zero
+    je init_divisor                 ; If zero, jump to the end of the counting
+    inc rcx                         ; Increment digit count
+    mov rdx, 0                      ; Clear upper 32 bits of the dividend
+    mov rbx, 10                     ; Divisor
+    div rbx                         ; Divide rax by rbx; quotient in rax, remainder in rdx
     mov r8, rcx
-    jmp count_digits      ; Repeat the loop
+    jmp count_digits                ; Repeat the loop
 
-innit_div: ; innitialize values for divisor
-    mov rax, 10
+
+init_divisor:                       ; Setup required registers for the divisor
+    mov rax, 1                     ; Set rax to 10
     mov r9, rcx ; counter
-    dec r9
     dec r9
     jmp divisor
     
@@ -52,7 +82,7 @@ first_digit: ; get first digit from input
     div rbx ; divide rax by divisor, quotient in rax, remainder rdx
     mov r9, rdx
     mov r10, 1
-    PRINT_STRING "m-th power of each digit: "
+    PRINT_STRING "m-th power of each digit: "    
     jmp power_of_n
     jmp div_10
     
@@ -107,7 +137,7 @@ remainder: ; get 1st digit from divisor
 check_armstrong:
     NEWLINE
     PRINT_STRING "Sum of the m-th power digits: "
-    PRINT_DEC 8, r11     ; Display the total sum of all the m-th power digits
+    PRINT_UDEC 8, r11     ; Display the total sum of all the m-th power digits
     NEWLINE
     PRINT_STRING "Armstrong Number: "
     
@@ -127,11 +157,10 @@ not_armstrong:
     jmp repeat
     
 repeat:
-    GET_CHAR AL           ; remove newline character
     PRINT_STRING "Do you want to continue (Y/N)? "
     GET_CHAR AL           ; Get the character input from the user
+    ; GET_CHAR BL           ; remove newline character
     cmp AL, 'Y'
-    GET_CHAR AL           ; remove newline character
     je main               ; If 'Y', jump back to main to get a new input
     cmp AL, 'N'
     je exit               ; If 'N', end the program
@@ -140,17 +169,3 @@ repeat:
 exit:
     xor rax, rax
     ret
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
