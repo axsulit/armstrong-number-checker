@@ -14,7 +14,6 @@ global main
 
 main:
     mov rbp, rsp; for correct debugging  
-    NEWLINE
     ; Get user input
     PRINT_STRING "Input Number: "       
     GET_UDEC 8, [input]    
@@ -75,7 +74,6 @@ repeat:
     ; Check if there are extra characters
     cmp qword [input_rem], 0xA
     jne clear_string
-    NEWLINE
     ;reset vars
     call reset
     ; loop if user inputs Y
