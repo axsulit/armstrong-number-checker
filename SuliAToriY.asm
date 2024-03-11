@@ -5,6 +5,7 @@
 section .data
 input dq 0
 input_rem dq 0xA
+input_rem_2 dq 0xA
 repeat_flag db 0xA
 digit_count dq 0
 sum dq 0
@@ -14,14 +15,14 @@ global main
 
 main:
     mov rbp, rsp; for correct debugging  
-    
+    NEWLINE
     ; Get user input
     PRINT_STRING "Input Number: "       
     GET_UDEC 8, [input]    
-    GET_STRING [input_rem], 8 
-    ; Check if valid integer   
+    GET_CHAR [input_rem]
+    ; Check if input has non-inteer value
     cmp qword [input_rem], 0xA          
-    jne error_string
+    jne clear_string
     ; Check if input < 0
     cmp qword [input], 0                              
     jl error_int
@@ -33,8 +34,16 @@ main:
     mov rdi, rax               
     mov rcx, 0       
     ; Start
-    jmp count_digits                                 
+    jmp count_digits               
 
+clear_string:
+    ; Capture all non-integer values until '\n'
+    GET_CHAR [input_rem]
+    mov rax, [input_rem]
+    cmp AL, 0xA
+    jne clear_string
+    jmp error_string
+    
 error_string:
     ; display error msg for string/0 input
     PRINT_STRING "Error: Invalid input"
@@ -49,6 +58,8 @@ error_int:
     
 reset:
     ; reset all necessary variables
+    NEWLINE
+    mov byte [repeat_flag], 0xA
     mov qword [input], 0
     mov qword [sum], 0
     mov qword [digit_count], 0
@@ -60,6 +71,8 @@ repeat:
     PRINT_STRING "Do you want to continue (Y/N)? "
     GET_CHAR [repeat_flag]       
     GET_STRING [input_rem], 8 
+    PRINT_STRING [repeat_flag]
+    PRINT_STRING [input_rem]
     ; Check if valid input
     cmp qword [input_rem], 0xA
     jne error_string
