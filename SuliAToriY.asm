@@ -1,171 +1,178 @@
-; Sulit, Anne Gabrielle S17
-; Torio, Ysobella S17
+; Sulit, Anne Gabrielle S17   Torio, Ysobella S17
 
 %include "io64.inc"
+
 section .data
 input dq 0
 input_rem dq 0xA
+repeat_flag db 0xA
+digit_count dq 0
+sum dq 0
+
 section .text
 global main
 
 main:
-    ; for correct debugging
-    mov rbp, rsp                    
+    mov rbp, rsp; for correct debugging  
     
     ; Get user input
-    PRINT_STRING "Input Number: "   
+    PRINT_STRING "Input Number: "       
     GET_UDEC 8, [input]    
-    GET_STRING [input_rem], 8
-      
-    ; If value is not '\n', the input is not a valid integer
-    cmp qword [input_rem], 0xA
+    GET_STRING [input_rem], 8 
+    ; Check if valid integer   
+    cmp qword [input_rem], 0xA          
     jne error_string
-    
-    ; If value is negative, the input is not a positive integer
-    cmp qword [input], 0                      
-    jl error_int                        
-    
+    ; Check if input < 0
+    cmp qword [input], 0                              
+    jl error_int
+    ; Check if input = 0       
+    cmp qword [input], 0                               
+    jE error_string                                         
     ; Initialize needed registers
-    mov rax, [input]
-    mov rdi, rax                     
-    mov r11, 0    
-    mov rcx, 0              
-    
-    ; Start        
-    jmp count_digits                
+    mov rax, [input]                    
+    mov rdi, rax               
+    mov rcx, 0       
+    ; Start
+    jmp count_digits                                 
 
 error_string:
+    ; display error msg for string/0 input
     PRINT_STRING "Error: Invalid input"
-    call reset_vars
-    NEWLINE
+    call reset
     jmp repeat
     
 error_int:
+    ; display error msg for negative input
     PRINT_STRING "Error: negative number input"
-    call reset_vars
-    NEWLINE
+    call reset
     jmp repeat
     
-reset_vars:
+reset:
+    ; reset all necessary variables
     mov qword [input], 0
+    mov qword [sum], 0
+    mov qword [digit_count], 0
     mov qword [input_rem], 0xA
     ret
+
+repeat:
+    ; Get user input
+    PRINT_STRING "Do you want to continue (Y/N)? "
+    GET_CHAR [repeat_flag]       
+    GET_STRING [input_rem], 8 
+    ; Check if valid input
+    cmp qword [input_rem], 0xA
+    jne error_string
+    ; loop if user inputs Y
+    cmp byte [repeat_flag], 'Y'
+    je main   
+    ; exit if user inputs N            
+    cmp byte [repeat_flag], 'N'
+    je exit       
+    ; show error msg
+    jmp error_string            
     
 count_digits: 
-    cmp rax, 0                      ; Check if the number is zero
-    je init_divisor                 ; If zero, jump to the end of the counting
-    inc rcx                         ; Increment digit count
-    mov rdx, 0                      ; Clear upper 32 bits of the dividend
-    mov rbx, 10                     ; Divisor
-    div rbx                         ; Divide rax by rbx; quotient in rax, remainder in rdx
+    ; Check if input is already zero
+    cmp rax, 0                      
+    je digit_power                 
+    ; Increment digit count
+    inc rcx                    
+    ; Divide rax by rbx
+    mov rdx, 0                      
+    mov rbx, 10                     
+    div rbx             
+    ; loop
+    jmp count_digits                
+
+digit_power:
+    PRINT_STRING "m-th power of each digit: "    
+    ; set digit counter
     mov r8, rcx
-    jmp count_digits                ; Repeat the loop
-
-
-init_divisor:                       ; Setup required registers for the divisor
-    mov rax, 1                     ; Set rax to 10
-    mov r9, rcx ; counter
+    mov r9, rcx 
     dec r9
-    jmp divisor
+    ; initialize divisor
+    jmp init_divisor
     
-divisor: ; multiply 10 to the number of digits
+init_divisor:    
+    ; Setup required registers for the divisor                   
+    mov rax, 1     
+    mov rbx, 1                
+    mov [digit_count], r9
+    jmp divisor
+
+divisor: 
+    ; Check if pointer is already at first digit
     cmp r9, 0
     je first_digit
-    imul rax, 10 ; Multiply RAX by 10
     dec r9
-    mov rbx, rax ; divisor
-    jmp divisor
-    
-first_digit: ; get first digit from input
-    mov rdx, 0  ; remainder
-    mov rax, rdi ; input
-    div rbx ; divide rax by divisor, quotient in rax, remainder rdx
-    mov r9, rdx
-    mov r10, 1
-    PRINT_STRING "m-th power of each digit: "    
+    ; multiply divisor by 10
+    imul rax, 10 
+    ; move divisor in rbx
+    mov rbx, rax 
+    jmp divisor ; start divisor again
+
+first_digit: 
+    ; rbx/rax; rax=quotient, rdx=remainder
+    mov rdx, 0  
+    mov rax, rdi 
+    div rbx 
+    ; update remaining number
+    mov rdi, rdx 
+    ;computer nth power of digit
+    mov r10, 1 ; contain nth power
     jmp power_of_n
-    jmp div_10
     
 power_of_n:
+    ; display nth power
     cmp r8, 0
     je display_power
-    imul r10, rax
     dec r8
-    
-    cmp r9, 0
-    jz check_r8
-    jmp power_of_n
+    ; multiply current power by current digit
+    imul r10, rax
+    jmp power_of_n ; loop
     
 display_power:
+    ; display power
     PRINT_DEC 8, R10
-    
-    ADD r11, r10
-    cmp r9, 0
-    jz check_armstrong
     PRINT_STRING ', '
-    jmp div_10
+    ; update sum
+    ADD [sum], r10
+    ; check if power of all digits done
+    cmp rdi, 0
+    jz check_armstrong
+    ; update registers and variables
+    mov r8, rcx 
+    dec qword [digit_count]
+    mov r9, [digit_count]
     
-check_r8:
-    cmp r8, 0
-    jz display_power
-    jmp power_of_n
-    
-div_10: ; divide the divisor by 10 to get the next digit
-    mov rax, rbx
-    mov rbx, 10 ; Divisor
-    mov rdx, 0
-    div rbx
-    mov rbx, rax
-    mov rax, r9
-    jmp remainder
-
-remainder: ; get 1st digit from divisor
-    
-    mov rdx, 0
-    div rbx
-    mov r9, rdx
-    ;PRINT_DEC 8, RAX
-    mov r8, rcx
-    mov r10, 1
-    cmp rdx, 0
-    je power_of_n
-    ;mov rax, rdx
-    mov r8, rcx
-    mov r10, 1
-    jmp power_of_n
+    jmp init_divisor
     
 check_armstrong:
+    ; Display the total sum
     NEWLINE
     PRINT_STRING "Sum of the m-th power digits: "
-    PRINT_UDEC 8, r11     ; Display the total sum of all the m-th power digits
+    PRINT_UDEC 8, [sum]     
+    mov r11, [sum]
     NEWLINE
-    PRINT_STRING "Armstrong Number: "
-    
-    ; Compare the sum to the original number
-    cmp r11, rdi          ; Compare the sum to the original number
-    je armstrong          ; If equal, it's an Armstrong number
-    jmp not_armstrong     ; If not equal, it's not an Armstrong number
+    ; Check if sum == input
+    cmp r11, [input]          
+    je armstrong          
+    jmp not_armstrong     
     
 armstrong:
-    PRINT_STRING "Yes"
+    ; input is armstrong number
+    PRINT_STRING "Armstrong Number: Yes"
     NEWLINE
     jmp repeat
 
 not_armstrong:
-    PRINT_STRING "No"
+    ; input is not armstrong number
+    PRINT_STRING "Armstrong Number: No"
     NEWLINE
     jmp repeat
     
-repeat:
-    PRINT_STRING "Do you want to continue (Y/N)? "
-    GET_CHAR AL           ; Get the character input from the user
-    ; GET_CHAR BL           ; remove newline character
-    cmp AL, 'Y'
-    je main               ; If 'Y', jump back to main to get a new input
-    cmp AL, 'N'
-    je exit               ; If 'N', end the program
-    jmp repeat            ; If neither 'Y' nor 'N', loop back to repeat
-    
 exit:
+    ; exit program
     xor rax, rax
     ret
