@@ -57,6 +57,7 @@ error_int:
     
 reset:
     ; reset all necessary variables
+    NEWLINE
     mov qword [input], 0
     mov qword [sum], 0
     mov qword [digit_count], 0
