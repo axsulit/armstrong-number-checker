@@ -57,8 +57,6 @@ error_int:
     
 reset:
     ; reset all necessary variables
-    NEWLINE
-    mov byte [repeat_flag], 0xA
     mov qword [input], 0
     mov qword [sum], 0
     mov qword [digit_count], 0
@@ -77,6 +75,8 @@ repeat:
     cmp qword [input_rem], 0xA
     jne clear_string
     NEWLINE
+    ;reset vars
+    call reset
     ; loop if user inputs Y
     cmp byte [repeat_flag], 'Y'
     je main   
